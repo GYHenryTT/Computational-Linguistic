@@ -34,13 +34,13 @@ This is an add-on function for selecting the best feature select rate. This func
 
 At the beginning, I trained the model without feature selection (you may set selection rate as 0 to verify the result). The evaluation result is as followed.
 
-![avatar](/rawresult.png)
+![avatar](rawresult.png)
 
 Then, I implement grid search to find the best select rate and get the following results. These two plots have select rate as X-axis and evaluation result as Y-axis (f1 in both negative and positive class as well as accuracy)
 
-![avatar](/plot_1.png)
-![avatar](/plot2.png)
+![avatar](plot_1.png)
+![avatar](plot2.png)
 
 Select rates in the first plot are from 0.01 to 0.99 with step size 0.05. And I found the model performed well in small selection rate. So in the second plot, I chose select rate from 0.001 to 0.1 with step size 0.001. Finally, I got the best selection rate 0.026 which means there will be 1010 words in the selected features. The evaluation of my Naive Bayes model with the best feature set is shown below.
 
-![avatar](/finalresult.png)
+![avatar](finalresult.png)
