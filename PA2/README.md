@@ -1,8 +1,6 @@
 <div align=center>
 
-# CS114 (Spring 2020) Programing Assignment 2
-
-## Naive Bayes Classifier and Evaluation
+# Naive Bayes Classifier and Evaluation
 
 ### Heyuan (Henry) Gao
 
