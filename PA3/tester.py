@@ -3,6 +3,9 @@ import sys
 import os
 import random
 import argparse
+import time
+import pandas as pd
+import matplotlib.pyplot as plt
 
 import jumbleProblem
 
@@ -148,21 +151,22 @@ if __name__ == "__main__":
     parser.add_argument('--dev', action='store', dest='devFile',
                     help='File to test on development', default='dev-data.txt' )
     parser.add_argument('--test', action='store', dest='testFile',
-                    help='File to test on', default='test-data-no-oov.txt')
+                    help='File to test on', default='dev-data.txt')
     parser.add_argument('--model', action='store', dest='model',
-                    help='What model to use', default='unigram.Unigram')
+                    help='What model to use', default='bigram_add_k.BigramAddK')
     
     parser.add_argument('--showguesses', action='store', dest='showguesses',
-                    help='show what you guess', default='True')
+                    help='show what you guess', default='False')
     parser.add_argument('--jumble', action='store', dest='jumble',
                     help='run Jumble (jumbled sentence) evaluation?', default='True')
     parser.add_argument('--generate', action='store', dest='generate',
-                    help='generate some sentences?', default='True')
+                    help='generate some sentences?', default='False')
     parser.add_argument('--check', action='store', dest='check',
-                    help='check probabilities sum to 1', default='True')
+                    help='check probabilities sum to 1', default='False')
     print('')
     results = parser.parse_args()
-    
+
+
     # set up file locations ...............................................
     dataPath  = results.data
     trainFile = os.path.join( dataPath, results.trainFile )
@@ -170,6 +174,7 @@ if __name__ == "__main__":
     testFile  = os.path.join( dataPath, results.testFile )
     jumblePath   = os.path.join( dataPath, 'jumble-dev' )
 
+    start_time = time.time()
     # load sentence data ..................................................
     print("Training data will be read from " + trainFile)
     
@@ -194,51 +199,63 @@ if __name__ == "__main__":
             print("Read " + str(len(jumbleProblems)) + " Jumble problems\n")
 
     # construct model, using reflection ...................................
-    model = get_class( results.model )()
-    print("Created model: " + results.model)
+    result_df = pd.DataFrame(columns=['k', 'Train_perpl', 'Test_perpl', 'Jumble_perpl', 'Jumble_WER', 'Jumble_Accuracy'])
+    k_list = [x/1000 for x in range(1, 11)]
+    for df_i, k in enumerate(k_list):
+        result_df.loc[df_i, 'k'] = k
+        model = get_class( results.model )(k=k)
+        print("Created model: " + results.model)
 
-    # train model .........................................................
-    print("Training model on " + str(len(trainSentences)) + " sentences" +
-                     " from " + trainFile + " ... ")
-    model.train(trainSentences)
-    print("done\n")
+        # train model .........................................................
+        print("Training model on " + str(len(trainSentences)) + " sentences" +
+                         " from " + trainFile + " ... ")
+        model.train(trainSentences)
+        print("done\n")
 
-    # check if the probability distribution of the model sums up properly
-    if results.check == 'True':
-        print("Checking model ...")
-        
-        contexts = [[""], "united".split(), "to the".split(), "the quick brown".split(), "lalok nok crrok".split()]
+        # check if the probability distribution of the model sums up properly
+        if results.check == 'True':
+            print("Checking model ...")
 
-        for i in range(10):
-            randomSentence = model.generateSentence()
-            contexts.append(randomSentence[: int(r.random() * len(randomSentence))])
+            contexts = [[""], "united".split(), "to the".split(), "the quick brown".split(), "lalok nok crrok".split()]
 
-        for context in contexts:
-            modelsum = model.checkProbability(context);
-            if abs(1.0-modelsum) > 1e-6:
-                print("\nWARNING: probability distribution of model does not sum up to one. Sum:" + str(modelsum))
-            else:
-                print("GOOD!")
-        print('')
+            for i in range(10):
+                randomSentence = model.generateSentence()
+                contexts.append(randomSentence[: int(r.random() * len(randomSentence))])
 
-    # evaluate on training and test data ..................................
-    print('Training set perplexity: = %.5f' % Tester.computePerplexity(model, trainSentences))
-    print('Testing set perplexity: = %.5f' % Tester.computePerplexity(model, testSentences))
-    
+            for context in contexts:
+                modelsum = model.checkProbability(context)
+                if abs(1.0-modelsum) > 1e-6:
+                    print("\nWARNING: probability distribution of model does not sum up to one. Sum:" + str(modelsum))
+                else:
+                    print("GOOD!")
+            print('')
 
-    # evaluate on Jumble data ................................................
-    if results.jumble == 'True':
-        print('Jumbled sentences: True answer perplexity: = %.5f' % Tester.computePerplexity(model, Tester.getCorrectSentences(jumbleProblems)))
+        # evaluate on training and test data ..................................
+        # print('Training set perplexity: = %.5f' % Tester.computePerplexity(model, trainSentences))
+        # print('Testing set perplexity: = %.5f' % Tester.computePerplexity(model, testSentences))
+        result_df.loc[df_i, 'Train_perpl'] = Tester.computePerplexity(model, trainSentences)
+        result_df.loc[df_i, 'Test_perpl'] = Tester.computePerplexity(model, testSentences)
 
-        # Get the WER and % correct scores.
-        scores = Tester.computeWordErrorRate(model, jumbleProblems, results.showguesses);
-        print("Jumbled sentences: Word Error Rate = %.5f%%" % (float(scores[0]) * 100))
-        print("Jumbled sentences: Percent Correct = %.5f%%" % (float(scores[1]) * 100))
-        print('')
+        # evaluate on Jumble data ................................................
+        if results.jumble == 'True':
+            # print('Jumbled sentences: True answer perplexity: = %.5f' % Tester.computePerplexity(model, Tester.getCorrectSentences(jumbleProblems)))
 
-    # generate sentences from model .......................................
-    if results.generate == 'True':
-        print("Generated sentences:")
-        for i in range(10):
-            print(' '.join(model.generateSentence()))
-        print('')
+            # Get the WER and % correct scores.
+            scores = Tester.computeWordErrorRate(model, jumbleProblems, results.showguesses)
+            # print("Jumbled sentences: Word Error Rate = %.5f%%" % (float(scores[0]) * 100))
+            # print("Jumbled sentences: Percent Correct = %.5f%%" % (float(scores[1]) * 100))
+            # print('')
+            result_df.loc[df_i, 'Jumble_perpl'] = Tester.computePerplexity(model, Tester.getCorrectSentences(jumbleProblems))
+            result_df.loc[df_i, 'Jumble_WER'] = float(scores[0]) * 100
+            result_df.loc[df_i, 'Jumble_Accuracy'] = float(scores[1]) * 100
+
+        # generate sentences from model .......................................
+        if results.generate == 'True':
+            print("Generated sentences:")
+            for i in range(10):
+                print(' '.join(model.generateSentence()))
+            print('')
+
+        print(f'{k} done!')
+    period = time.time() - start_time
+    print(f'Total Running Time: {period}')

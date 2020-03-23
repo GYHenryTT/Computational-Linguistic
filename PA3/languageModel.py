@@ -5,9 +5,9 @@ Tuan Do, Kenneth Lai
 '''
 class LanguageModel(object) :
 
-    START = "<S>";
-    STOP = "</S>";
-    UNK = "<UNK>";
+    START = "<S>"
+    STOP = "</S>"
+    UNK = "<UNK>"
 
     def __init__(self):
         self.word_dict = {}
@@ -96,7 +96,7 @@ class LanguageModel(object) :
     distribution, this should always sum to 1.
     '''
     def checkProbability(self, context):
-        modelsum = 0.0;
+        modelsum = 0.0
         for token in self.getVocabulary():
             context.append(token)
             modelsum += self.getWordProbability(context, len(context) - 1)
