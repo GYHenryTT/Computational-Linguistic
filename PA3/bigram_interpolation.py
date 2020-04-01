@@ -10,13 +10,13 @@ from bigram import Bigram
 
 class BigramInterpolation(LanguageModel):
 
-    def __init__(self):
+    def __init__(self, lambda_1=0.67):
         self.unigram = Unigram()
         self.bigram = Bigram()
         # just needed for languageModel.py to work
         self.word_dict = self.bigram.word_dict
-        self.lambda_1 = 0.5
-        self.lambda_2 = 0.5
+        self.lambda_1 = lambda_1
+        self.lambda_2 = 1 - lambda_1
     
     '''
     Trains a bigram-interpolation language model on a training set.
