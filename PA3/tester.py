@@ -153,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store', dest='testFile',
                     help='File to test on', default='dev-data.txt')
     parser.add_argument('--model', action='store', dest='model',
-                    help='What model to use', default='bigram_add_k.BigramAddK')
+                    help='What model to use', default='bigram_interpolation.BigramInterpolation')
     
     parser.add_argument('--showguesses', action='store', dest='showguesses',
                     help='show what you guess', default='False')
@@ -199,11 +199,11 @@ if __name__ == "__main__":
             print("Read " + str(len(jumbleProblems)) + " Jumble problems\n")
 
     # construct model, using reflection ...................................
-    result_df = pd.DataFrame(columns=['k', 'Train_perpl', 'Test_perpl', 'Jumble_perpl', 'Jumble_WER', 'Jumble_Accuracy'])
-    k_list = [x/1000 for x in range(1, 11)]
+    result_df = pd.DataFrame(columns=['lambda', 'Train_perpl', 'Test_perpl', 'Jumble_perpl', 'Jumble_WER', 'Jumble_Accuracy'])
+    k_list = [x/100 for x in range(51, 80)]
     for df_i, k in enumerate(k_list):
-        result_df.loc[df_i, 'k'] = k
-        model = get_class( results.model )(k=k)
+        result_df.loc[df_i, 'lambda'] = k
+        model = get_class( results.model )(k)
         print("Created model: " + results.model)
 
         # train model .........................................................
