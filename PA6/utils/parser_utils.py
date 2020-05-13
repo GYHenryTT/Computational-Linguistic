@@ -10,7 +10,7 @@ import time
 import os
 import logging
 from collections import Counter
-from general_utils import get_minibatches
+from . general_utils import get_minibatches
 from parser_transitions import minibatch_parse
 
 import numpy as np

@@ -32,13 +32,10 @@ def d_relu(x):
     @return y (ndarray): tensor of derivatives at each ReLU output in x
     """
     ### YOUR CODE HERE (~2 Lines)
-    ### TODO:
     ###     Compute the derivative of the ReLU function.
     ###     Be sure to take advantage of Numpy universal functions!
     ###     Note that by convention, we take the derivative of ReLU(z) at z = 0 to be 0.
-
-
-
+    y = np.where(x > 0, 1, 0)
     ### END YOUR CODE
     return y
 
@@ -80,14 +77,28 @@ def train_for_epoch(parser, train_data, dev_data, batch_size):
         loss = 0. # store loss for this batch here
 
         ### YOUR CODE HERE (~11+ Lines)
-        ### TODO:
         ###      1) Run train_x forward through model to produce outputs
         ###      2) Calculate the cross-entropy loss
         ###      3) Backprop losses
         ###      4) Update the model weights
-
-
-
+        model = parser.model
+        hidden1_output, hidden2_output, y_hat = model.forward(train_x)
+        x_input = np.insert(train_x, train_x.shape[1], 1, axis=1)
+        # cross-entropy loss
+        loss -= np.sum(train_y * np.log(y_hat), axis=1)
+        # Backprop losses
+        outputs_delta = y_hat - train_y
+        output_gradient = np.dot(hidden2_output.T, outputs_delta)
+        hidden2_delta = np.dot(np.dot(outputs_delta, model.output_weights.T),
+                               d_relu(np.dot(hidden1_output, model.hidden_weights2)))
+        hidden2_gradient = np.dot(hidden1_output.T, hidden2_delta)
+        hidden1_delta = np.dot(np.dot(hidden2_delta, model.hidden_weights2.T),
+                               d_relu(np.dot(x_input, model.hidden_weights1)))
+        hidden1_gradient = np.dot(x_input.T, hidden1_delta)
+        # Update the model weights
+        model.output_weights -= model.lr * output_gradient
+        model.hidden_weights2 -= model.lr * hidden2_gradient
+        model.hidden_weights1 -= model.lr * hidden1_gradient
         ### END YOUR CODE
         loss_meter.update(loss)
 

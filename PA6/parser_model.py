@@ -25,12 +25,9 @@ def relu(x):
     @return y (ndarray): tensor of ReLU(z) for each z in x
     """
     ### YOUR CODE HERE (1 Line)
-    ### TODO:
-    ###     Compute the ReLU function: ReLU(z) = max(z, 0).
-    ###     Be sure to take advantage of Numpy universal functions!
-
-
-
+    # Compute the ReLU function: ReLU(z) = max(z, 0).
+    # Be sure to take advantage of Numpy universal functions!
+    y = np.maximum(x, 0)
     ### END YOUR CODE
     return y
 
@@ -63,9 +60,9 @@ class ParserModel():
         #        1st hidden layer: [-0.05, 0.05]
         #        2nd hidden layer: [-0.1, 0.1]
         #        Output layer: [-0.1, 0.1]
-        self.w1 = np.random.uniform(-0.05, 0.05, (self.embed_size, self.hidden_size))
-        self.w2 = np.random.uniform(-0.1, 0.1, (self.hidden_size, self.hidden_size))
-        self.u = np.random.uniform(-0.1, 0.1, (self.hidden_size, self.n_classes))
+        self.hidden_weights1 = np.random.uniform(-0.05, 0.05, (self.embed_size*self.n_features+1, self.hidden_size))
+        self.hidden_weights2 = np.random.uniform(-0.1, 0.1, (self.hidden_size+1, self.hidden_size))
+        self.output_weights = np.random.uniform(-0.1, 0.1, (self.hidden_size+1, self.n_classes))
         ### END YOUR CODE
 
     def embedding_lookup(self, w):
@@ -75,11 +72,9 @@ class ParserModel():
             @return x (ndarray): tensor of embeddings for words represented in w
                                  (batch_size, n_features * embed_size)
         """
-
         ### YOUR CODE HERE (~1-3 Lines)
-        ### TODO:
-        ###     1) For each index `i` in `w`, select `i`th vector from self.embeddings
-        ###     2) Reshape the tensor using `reshape` function if necessary
+        # 1) For each index `i` in `w`, select `i`th vector from self.embeddings
+        # 2) Reshape the tensor using `reshape` function if necessary
         ###
         ### Note: All embedding vectors are stacked and stored as a matrix. The model receives
         ###       a list of indices representing a sequence of words, then it calls this lookup
@@ -87,7 +82,8 @@ class ParserModel():
         ###
         ###       Pay attention to tensor shapes and reshape if necessary.
         ###       Make sure you know each tensor's shape before you run the code!
-
+        func = lambda a, b: a[b, :]
+        x = func(self.embeddings, w).reshape((w.shape[0], w.shape[1]*self.embed_size))
         ### END YOUR CODE
         return x
 
@@ -103,11 +99,18 @@ class ParserModel():
                                            (batch_size, n_classes)
         """
         ### YOUR CODE HERE (~11 Lines)
-        ### TODO:
         ###     Complete the forward computation as described in write-up.
-
-
-
+        outputs = []
+        x = self.embedding_lookup(w)
+        x = np.insert(x, x.shape[1], 1, axis=1)
+        hidden_layer1 = relu(np.dot(x, self.hidden_weights1))
+        hidden_layer1 = np.insert(hidden_layer1, hidden_layer1.shape[1], 1, axis=1)
+        outputs.append(hidden_layer1)
+        hidden_layer2 = relu(np.dot(hidden_layer1, self.hidden_weights2))
+        hidden_layer2 = np.insert(hidden_layer2, hidden_layer2.shape[1], 1, axis=1)
+        outputs.append(hidden_layer2)
+        output_layer = softmax(np.dot(hidden_layer2, self.output_weights))
+        outputs.append(output_layer)
         ### END YOUR CODE
         return outputs
 
@@ -142,3 +145,5 @@ if __name__ == "__main__":
     if args.forward:
         check_forward()
         print("Forward sanity check passes!")
+
+    check_forward()
