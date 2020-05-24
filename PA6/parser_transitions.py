@@ -95,7 +95,6 @@ def minibatch_parse(sentences, model, batch_size):
     dependencies = []
 
     ### YOUR CODE HERE (~8-11 Lines)
-    ### TODO:
     ###     Implement the minibatch parse algorithm as described in the pdf handout
     ###
     ###     Note: A shallow copy (as denoted in the PDF) can be made with the "=" sign in python, e.g.
@@ -107,11 +106,17 @@ def minibatch_parse(sentences, model, batch_size):
     ###             contains references to the same objects. Thus, you should NOT use the `del` operator
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
-    partial_parses = [sentence for sentence in sentences]
+    partial_parses = [PartialParse(sentence) for sentence in sentences]
     unfinished_parses = partial_parses[:]
     while unfinished_parses:
         mini_batch = unfinished_parses[:batch_size]
-
+        transitions = model.predict(mini_batch)
+        for i, partial_parse in enumerate(mini_batch):
+            if (len(partial_parse.stack) == 1) and not partial_parse.buffer:
+                unfinished_parses.remove(partial_parse)
+            else:
+                partial_parse.parse_step(transitions[i])
+    dependencies = [partial_parse.dependencies for partial_parse in partial_parses]
     ### END YOUR CODE
 
     return dependencies

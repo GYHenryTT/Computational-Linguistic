@@ -31,6 +31,7 @@ def relu(x):
     ### END YOUR CODE
     return y
 
+
 class ParserModel():
     """ Feedforward neural network with an embedding layer and two hidden layers.
     The ParserModel will predict which transition should be applied to a
@@ -86,7 +87,6 @@ class ParserModel():
         x = func(self.embeddings, w).reshape((w.shape[0], w.shape[1]*self.embed_size))
         ### END YOUR CODE
         return x
-
 
     def forward(self, w):
         """ Run the model forward.

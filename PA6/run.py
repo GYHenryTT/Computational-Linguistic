@@ -16,6 +16,7 @@ import math
 import time
 import argparse
 import numpy as np
+import time
 
 from parser_model import ParserModel
 from utils.parser_utils import minibatches, load_and_preprocess_data, AverageMeter
@@ -35,7 +36,8 @@ def d_relu(x):
     ###     Compute the derivative of the ReLU function.
     ###     Be sure to take advantage of Numpy universal functions!
     ###     Note that by convention, we take the derivative of ReLU(z) at z = 0 to be 0.
-    y = np.where(x > 0, 1, 0)
+    y = np.zeros(x.shape)
+    y[x > 0] = 1
     ### END YOUR CODE
     return y
 
@@ -83,18 +85,23 @@ def train_for_epoch(parser, train_data, dev_data, batch_size):
         ###      4) Update the model weights
         model = parser.model
         hidden1_output, hidden2_output, y_hat = model.forward(train_x)
-        x_input = np.insert(train_x, train_x.shape[1], 1, axis=1)
+        x_input = model.embedding_lookup(train_x)
+        x_input = np.insert(x_input, x_input.shape[1], 1, axis=1)
         # cross-entropy loss
-        loss -= np.sum(train_y * np.log(y_hat), axis=1)
+        loss -= np.sum(train_y * np.log(y_hat), axis=1).mean()
+
         # Backprop losses
         outputs_delta = y_hat - train_y
         output_gradient = np.dot(hidden2_output.T, outputs_delta)
-        hidden2_delta = np.dot(np.dot(outputs_delta, model.output_weights.T),
-                               d_relu(np.dot(hidden1_output, model.hidden_weights2)))
+
+        hidden2_delta = (np.dot(outputs_delta, model.output_weights[:-1, :].T)
+                         * d_relu(np.dot(hidden1_output, model.hidden_weights2)))
         hidden2_gradient = np.dot(hidden1_output.T, hidden2_delta)
-        hidden1_delta = np.dot(np.dot(hidden2_delta, model.hidden_weights2.T),
-                               d_relu(np.dot(x_input, model.hidden_weights1)))
+
+        hidden1_delta = (np.dot(hidden2_delta, model.hidden_weights2[:-1, :].T)
+                         * d_relu(np.dot(x_input, model.hidden_weights1)))
         hidden1_gradient = np.dot(x_input.T, hidden1_delta)
+
         # Update the model weights
         model.output_weights -= model.lr * output_gradient
         model.hidden_weights2 -= model.lr * hidden2_gradient
@@ -119,7 +126,7 @@ if __name__ == "__main__":
     parser, embeddings, train_data, dev_data, test_data = load_and_preprocess_data(debug)
 
     start = time.time()
-    model = ParserModel(embeddings)
+    model = ParserModel(embeddings, hidden_size=400)
     parser.model = model
     print("took {:.2f} seconds\n".format(time.time() - start))
 
@@ -127,7 +134,7 @@ if __name__ == "__main__":
     print("TRAINING")
     print(80 * "=")
 
-    train(parser, train_data, dev_data, batch_size=1024, n_epochs=10, lr=0.0005)
+    train(parser, train_data, dev_data, batch_size=1024, n_epochs=30, lr=0.001)
 
     if not debug:
         print(80 * "=")
